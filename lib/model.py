@@ -1,24 +1,23 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
+from tensorflow.keras.optimizers import Adam
 
-def get_cnn_model(input_shape=(224,224,3), num_classes=3):
-    model = Sequential([
-        Conv2D(32,(3,3), activation='relu', input_shape=input_shape),
-        BatchNormalization(),
-        MaxPooling2D(2,2),
+def get_resnet_model(input_shape=(224,224,3), num_classes=3):
+    base_model = ResNet50(weights="imagenet", include_top=False, input_shape=input_shape)
+    for layer in base_model.layers:
+        layer.trainable = False
 
-        Conv2D(64,(3,3), activation='relu'),
-        BatchNormalization(),
-        MaxPooling2D(2,2),
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    x = Dense(256, activation="relu")(x)
+    x = Dropout(0.5)(x)
+    preds = Dense(num_classes, activation="softmax")(x)
 
-        Conv2D(128,(3,3), activation='relu'),
-        BatchNormalization(),
-        MaxPooling2D(2,2),
-
-        Flatten(),
-        Dense(128, activation='relu'),
-        Dropout(0.5),
-        Dense(num_classes, activation='softmax')
-    ])
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model = Model(inputs=base_model.input, outputs=preds)
+    model.compile(
+        optimizer=Adam(learning_rate=1e-4),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
     return model

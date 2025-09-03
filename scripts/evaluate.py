@@ -1,11 +1,9 @@
 from lib.data import get_generators
-from lib.model import get_cnn_model
 from lib.evaluate import evaluate_model
+from tensorflow.keras.models import load_model
 
-data_dir = 'data'
+data_dir = "data"
 _, _, test_gen = get_generators(data_dir)
 
-model = get_cnn_model()
-model.load_weights('models/chest_cnn_model.h5')
-
+model = load_model("saved_model/chestxray_resnet.h5")
 evaluate_model(model, test_gen)
